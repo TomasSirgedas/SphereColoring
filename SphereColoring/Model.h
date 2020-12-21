@@ -91,22 +91,29 @@ static vector<XYZ> operator*( const QMtx4x4& m, const vector<XYZ>& v )
    return ret;
 }
 
-//class Symmetry
-//{
-//public:
-//
-//};
-
-class IcoSymmetry
+class ISymmetry
 {
 public:
    struct Config
    {
       QMtx4x4 m;
       vector<int> state;
-      bool isHomeState() const { return state == vector<int>{0,0,0,0}; }
+      bool isHomeState() const 
+      { 
+         for ( int x : state )
+            if ( x != 0 )
+               return false;
+         return true;
+      }
    };
 
+public:
+   virtual Perm colorPermOf( const QMtx4x4& m ) const = 0;
+   virtual vector<Config> matrices() const = 0;
+};
+
+class IcoSymmetry : public ISymmetry
+{
 public:
    IcoSymmetry() 
    {
@@ -200,6 +207,21 @@ public:
    vector<XYZ> _Pts;
 };
 
+class GlobalSymmetry
+{
+private:
+   GlobalSymmetry() { _Symmetry.reset( new IcoSymmetry ); }
+
+public:
+   static GlobalSymmetry& theInstance() { static GlobalSymmetry s_theInstance; return s_theInstance; }
+   static ISymmetry* symmetry() { return theInstance()._Symmetry.get(); }
+   static Perm colorPermOf( const QMtx4x4& m ) { return symmetry()->colorPermOf( m ); }
+   static vector<ISymmetry::Config> matrices() { return symmetry()->matrices(); }
+      
+public:
+   shared_ptr<ISymmetry> _Symmetry;
+};
+
 uint64_t matrixId( const QMtx4x4& m );
 
 class MatrixIndexMap
@@ -207,7 +229,7 @@ class MatrixIndexMap
 private:
    MatrixIndexMap()
    {
-      _Matrices = _Ico.matrices();
+      _Matrices = GlobalSymmetry::matrices();
       for ( int i = 0; i < (int) _Matrices.size(); i++ )
          _MatrixIdToIndex[matrixId( _Matrices[i].m )] = i;
    }
@@ -222,8 +244,7 @@ public:
    static QMtx4x4 at( int index ) { return theInstance()._Matrices[index].m; }
 
 public:
-   IcoSymmetry _Ico;
-   vector<IcoSymmetry::Config> _Matrices;
+   vector<ISymmetry::Config> _Matrices;
    unordered_map<uint64_t, int> _MatrixIdToIndex;
 };
 
@@ -232,7 +253,7 @@ class MatrixSymmetryMap
 public:
    MatrixSymmetryMap( const XYZ& symmetricalPt )
    {
-      const vector<IcoSymmetry::Config>& m = MatrixIndexMap::theInstance()._Matrices;
+      const vector<ISymmetry::Config>& m = MatrixIndexMap::theInstance()._Matrices;
       for ( int a = 0; a < (int) m.size(); a++ )
       {
          _MapToReal.push_back( a );
@@ -260,289 +281,43 @@ public:
       return ret;
    }
 
-   static MatrixSymmetryMap* symmetryNone()  { static IcoSymmetry ico; static MatrixSymmetryMap s_map( XYZ(7,8,9) ); return &s_map; }
-   static MatrixSymmetryMap* symmetry012()   { static IcoSymmetry ico; static MatrixSymmetryMap s_map( ico[0]+ico[1]+ico[2] ); return &s_map; }
-   static MatrixSymmetryMap* symmetry12345() { static IcoSymmetry ico; static MatrixSymmetryMap s_map( ico[0] ); return &s_map; }
-   static MatrixSymmetryMap* symmetry01()    { static IcoSymmetry ico; static MatrixSymmetryMap s_map( ico[0]+ico[1] ); return &s_map; }
-   static MatrixSymmetryMap* symmetryFor( const XYZ& p )
-   {
-      IcoSymmetry ico;
-      if ( p.normalized().dist2( ico[0].normalized() ) < 1e-9 )
-         return symmetry12345();
-      if ( p.normalized().dist2( ( ico[0] + ico[1] + ico[2] ).normalized() ) < 1e-9 )
-         return symmetry012();
-      if ( p.normalized().dist2( ( ico[0] + ico[1] ).normalized() ) < 1e-9 )
-         return symmetry01();
-      return symmetryNone();
+   //static MatrixSymmetryMap* symmetryNone()  { static IcoSymmetry ico; static MatrixSymmetryMap s_map( XYZ(7,8,9) ); return &s_map; }
+   //static MatrixSymmetryMap* symmetry012()   { static IcoSymmetry ico; static MatrixSymmetryMap s_map( ico[0]+ico[1]+ico[2] ); return &s_map; }
+   //static MatrixSymmetryMap* symmetry12345() { static IcoSymmetry ico; static MatrixSymmetryMap s_map( ico[0] ); return &s_map; }
+   //static MatrixSymmetryMap* symmetry01()    { static IcoSymmetry ico; static MatrixSymmetryMap s_map( ico[0]+ico[1] ); return &s_map; }
+   //static MatrixSymmetryMap* symmetryFor( const XYZ& p )
+   //{
+   //   IcoSymmetry ico;
+   //   if ( p.normalized().dist2( ico[0].normalized() ) < 1e-9 )
+   //      return symmetry12345();
+   //   if ( p.normalized().dist2( ( ico[0] + ico[1] + ico[2] ).normalized() ) < 1e-9 )
+   //      return symmetry012();
+   //   if ( p.normalized().dist2( ( ico[0] + ico[1] ).normalized() ) < 1e-9 )
+   //      return symmetry01();
+   //   return symmetryNone();
+   //}
+
+   static shared_ptr<MatrixSymmetryMap> symmetryNone() 
+   { 
+      static shared_ptr<MatrixSymmetryMap> s_noSymmetry( new MatrixSymmetryMap(XYZ(7,8,9)) ); 
+      return s_noSymmetry;
    }
+
+
+   static shared_ptr<MatrixSymmetryMap> symmetryFor( const XYZ& p )
+   {
+      shared_ptr<MatrixSymmetryMap> ret( new MatrixSymmetryMap( p ) );
+      if ( !ret->hasSymmetry() )
+         return symmetryNone(); // less duplication
+      return ret;
+   }
+
 
    bool hasSymmetry() const { return _SymmetricMatrices[0].size() > 1; }
 
 public:
    vector<int> _MapToReal;
    vector<vector<int>> _SymmetricMatrices; // (inverse of _MapToReal)
-};
-
-//class TileDot
-//{
-//public:
-//   class Neighbor
-//   {
-//   public:
-//      Neighbor( int index, const QMtx4x4& mtx, bool isSymmetrical ) : _Index(index), _Mtx(mtx), _IsSymmetrical(isSymmetrical) {}
-//
-//      int _Index;
-//      QMtx4x4 _Mtx;
-//      bool _IsSymmetrical;
-//
-//      Neighbor operator*( const QMtx4x4& m ) const { return Neighbor( _Index, _Mtx * m, _IsSymmetrical ); }
-//      Neighbor preMul( const QMtx4x4& m ) const { return Neighbor( _Index, m * _Mtx, _IsSymmetrical ); }
-//      bool operator==( const Neighbor& rhs ) const { return _Index == rhs._Index && ( fuzzyCompare( _Mtx, rhs._Mtx ) || _IsSymmetrical ); }
-//   };
-//
-//public:
-//   TileDot( int index, const QPoint& gridPos, const XYZ& pos, int color ) : _Index(index), _GridPos( gridPos ), _Pos(pos), _Color(color) {}
-//   int neighborIndex( const Neighbor& neighb ) const
-//   {
-//      for ( int i = 0; i < (int)_Neighbors.size(); i++ )
-//         if ( _Neighbors[i] == neighb )
-//            return i;
-//      throw 777;
-//   }
-//   Neighbor nextNeighbor( const Neighbor& neighb ) const
-//   {
-//      return _Neighbors[mod( neighborIndex( neighb ) + 1, (int) _Neighbors.size() )];
-//   }
-//   bool isCenter() const { return _Index == 0; }
-//
-//public:
-//   int _Index;
-//   QPoint _GridPos;
-//   XYZ _Pos;
-//   int _Color;
-//   vector<Neighbor> _Neighbors;
-//};
-//
-//class TileDots
-//{
-//public:
-//   void add( const TileDot& tileDot ) 
-//   { 
-//      v.push_back( tileDot );
-//      _ToIndex[tileDot._GridPos.y()][tileDot._GridPos.x()] = v.back()._Index;
-//   }
-//   int size() const { return (int) v.size(); }
-//   vector<TileDot>& arr() { return v; }
-//   const vector<TileDot>& arr() const { return v; }
-//   const TileDot& operator[]( int idx ) const { return v[idx]; }
-//
-//   bool isTileAt( const QPoint& pos ) const { return _ToIndex.count( pos.y() ) && _ToIndex.at( pos.y() ).count( pos.x() ); }
-//   const TileDot& tileAt( const QPoint& pos ) const { return v[_ToIndex.at( pos.y() ).at( pos.x() )]; }
-//
-//   void sortNeighbors();
-//   XYZ posOf( const TileDot::Neighbor& a ) const { return a._Mtx * v[a._Index]._Pos; }
-//
-//   TileDot::Neighbor nextNeighbor( const TileDot::Neighbor& a, const TileDot::Neighbor& b ) const
-//   {
-//      return v[a._Index].nextNeighbor( b.preMul( a._Mtx.inverted() ) ).preMul( a._Mtx );
-//      //qDebug() << "---";
-//      //qDebug() << a._Index << posOf( a );
-//      //qDebug() << b._Index << posOf( b );
-//      //TileDot::Neighbor ret = v[a._Index].nextNeighbor( b.preMul( a._Mtx.inverted() ) ).preMul( a._Mtx );
-//      //qDebug() << ret._Index << posOf( ret );
-//      //return ret;
-//   }
-//   
-//   vector<TileDot::Neighbor> polygonForEdge( const TileDot::Neighbor& a, const TileDot::Neighbor& b ) const
-//   {   
-//      vector<TileDot::Neighbor> ret = { a, b };
-//      while ( true )
-//      {
-//         TileDot::Neighbor c = nextNeighbor( ret.back(), ret[ret.size()-2] );
-//         if ( c == ret[0] )
-//            break;
-//         ret.push_back( c );
-//      }
-//      return ret;
-//   }
-//     
-//private:
-//   vector<TileDot> v;
-//   unordered_map<int, unordered_map<int, int>> _ToIndex;
-//};
-//
-//TileDots generateSphereColoringDots( int numExtensions );
-
-
-//
-//class Graph
-//{
-//public:
-//   class Vertex
-//   {
-//   public:
-//      Vertex( int index, const XYZ& pos ) : _Index(index), _Pos(pos) {}
-//
-//   public:
-//      int _Index;
-//      XYZ _Pos;   
-//   };
-//
-//   class VertexPtr
-//   {
-//   public:
-//      VertexPtr( Graph* graph, int index, const QMtx4x4& m ) : _Graph(graph), _Index(index), _Mtx(m) {}
-//
-//      XYZ pos() const { return _Mtx * _Graph->_Vertices[_Index]._Pos; }
-//
-//   public:
-//      Graph* _Graph;
-//      int _Index;
-//      QMtx4x4 _Mtx;
-//   };
-//
-//   class Tile
-//   {
-//   public:
-//      vector<VertexPtr> _Vertices;
-//      int _Color;
-//   };
-//
-//   Graph( const TileDots& tileDots );
-//
-//
-//public:
-//   vector<Vertex> _Vertices;
-//   vector<Tile> _Tiles;
-//};
-
-class HexCoords
-{
-public:
-   HexCoords( int extensions ) : EXTENSIONS(extensions), _Center( -.73, -.23, 0 )
-   {
-      XYZ ico0 = _Ico[0];
-      XYZ ico01 = (( _Ico[0] + _Ico[1] ) / 2).normalized() * _Ico.radius();
-      XYZ ico02 = (( _Ico[0] + _Ico[2] ) / 2).normalized() * _Ico.radius();
-      XYZ ico012 = (( _Ico[0] + _Ico[1] + _Ico[2] ) / 3).normalized() * _Ico.radius();
-      XYZ ico015 = (( _Ico[0] + _Ico[1] + _Ico[5] ) / 3).normalized() * _Ico.radius();
-      XYZ ico1 = _Ico[1];
-      XYZ ico2 = _Ico[2];
-      _Icos = vector<vector<XYZ>> { { ico0, ico01, ico012, XYZ(0,0,0) }
-                                  , { ico0, ico02, ico012, XYZ(0,0,0) }
-                                  , { ico0, ico01, ico015, XYZ(0,0,0) }
-                                  , { ico1, ico01, ico012, XYZ(0,0,0) }
-                                  , { ico1, ico01, ico015, XYZ(0,0,0) }
-                                  , { ico2, ico01, ico012, XYZ(0,0,0) } };
-
-      XYZ hex0 = _Center;
-      //XYZ hex01 = XYZ( 11.5 + (EXTENSIONS-1)*7, 2.5, 0 );
-      //XYZ hex012 = XYZ( 17/3. + (EXTENSIONS-1)*14./3, 35/3. + (EXTENSIONS-1)*14./3, 0 );
-      //XYZ hex02 = XYZ( -3.5, 15 + (EXTENSIONS-1)*7, 0 ) - XYZ( 0, .00001, 0 );
-      //XYZ hex015 = hex01*2 - hex012;
-      //XYZ hex1 = hex01*2 - hex0;
-      XYZ hex01 = XYZ( 5 + EXTENSIONS*7, -.5, 0 );
-      XYZ hex012 = XYZ( 11/3. + EXTENSIONS*14./3, 8/3. + EXTENSIONS*14./3, 0 );
-      XYZ hex02 = XYZ( .5, 4.5 + EXTENSIONS*7, 0 ) - XYZ( 0, .00001, 0 );
-      XYZ hex015 = hex01*2 - hex012;
-      XYZ hex1 = hex01*2 - hex0;
-      XYZ hex2 = hex02*2 - hex0;
-
-      _HexToModels = vector<QMtx4x4> {
-         ::map( { hex0, hex01, hex012, XYZ(0,0,1) }, _Icos[0] ),
-         ::map( { hex0, hex02, hex012, XYZ(0,0,1) }, _Icos[1] ),
-         ::map( { hex0, hex01, hex015, XYZ(0,0,1) }, _Icos[2] ),
-         ::map( { hex1, hex01, hex012, XYZ(0,0,1) }, _Icos[3] ),
-         ::map( { hex1, hex01, hex015, XYZ(0,0,1) }, _Icos[4] ),
-         ::map( { hex2, hex01, hex012, XYZ(0,0,1) }, _Icos[5] )
-      };
-   }
-   static QPoint dir( int dir )
-   {      
-      static QPoint s_dirs[] = { QPoint( 0, 1 ), QPoint( 1, 0 ), QPoint( 1, -1 ), QPoint( 0, -1 ), QPoint( -1, 0 ), QPoint( -1, 1 ) };
-      return s_dirs[mod(dir,6)];
-   }
-   
-   XYZ toIcoCoord( const QPoint& pt ) const
-   {
-      XYZ ret;
-      if ( toIcoCoordX( pt, ret ) )
-         return ret;
-      //if ( toIcoCoordX( QPoint( 23-pt.y()-pt.x()+(EXTENSIONS-1)*14, 6+pt.x() ), ret ) )
-      //   return _Ico.map( {0,1,2}, {2,0,1} ) * ret;
-      //if ( toIcoCoordX( QPoint( pt.y()-6, 29-pt.x()-pt.y()+(EXTENSIONS-1)*14 ), ret ) )
-      //   return _Ico.map( {0,1,2}, {1,2,0} ) * ret;
-
-      //return _Ico[2];
-      throw 777;
-   }
-
-   vector<QPoint> transformed( const vector<QPoint>& v, function<QPoint( const QPoint& )> f ) const
-   {      
-      vector<QPoint> ret;
-      for ( const QPoint& p : v )
-         ret.push_back( f( p ) );
-      return ret;
-   }
-   //QPoint rotatedCCW( const QPoint& p ) const { return QPoint( -1-p.y(), p.x()+p.y()+1 ); }
-   //vector<QPoint> rotatedCCW( const vector<QPoint>& v ) const { return transformed( v, [&]( const QPoint& p ) { return rotatedCCW( p ); } ); }
-   QPoint rotatedCW( const QPoint& p ) const { return QPoint( p.x() + p.y(), -p.x() ); }
-   vector<QPoint> rotatedCW( const vector<QPoint>& v ) const { return transformed( v, [&]( const QPoint& p ) { return rotatedCW( p ); } ); }
-   //QPoint rotated012CCW( const QPoint& p ) const { return QPoint( 9-p.y()-p.x()+EXTENSIONS*14, 6+p.x() ); }
-   //vector<QPoint> rotated012CCW( const vector<QPoint>& v ) const { return transformed( v, [&]( const QPoint& p ) { return rotated012CCW( p ); } ); }
-   //QPoint rotated012CW( const QPoint& p ) const { return QPoint( p.y()-6, 29-p.x()-p.y()+(EXTENSIONS-1)*14 ); }
-   //vector<QPoint> rotated012CW( const vector<QPoint>& v ) const { return transformed( v, [&]( const QPoint& p ) { return rotated012CW( p ); } ); }
-   //QPoint rotated01( const QPoint& p ) const { return QPoint( 23-p.x()+(EXTENSIONS-1)*14, 5-p.y() ); }
-   //vector<QPoint> rotated01( const vector<QPoint>& v ) const { return transformed( v, [&]( const QPoint& p ) { return rotated01( p ); } ); }
-
-private:
-   bool toIcoCoordX( const QPoint& pt, XYZ& ret ) const
-   {
-      if ( pt == QPoint(0,0) )
-      { 
-         ret = _Ico[0]; 
-         return true; 
-      }
-      //if ( (EXTENSIONS-1) == 2 && pt == QPoint(15+((EXTENSIONS-1)-2)*14,21+((EXTENSIONS-1)-2)*14) )
-      //{ 
-      //   ret = (( _Ico[0] + _Ico[1] + _Ico[2] ) / 3).normalized() * _Ico.radius(); 
-      //   return true; 
-      //}
-      if ( pt.x() < 1 )
-      { 
-         if ( !toIcoCoordX( QPoint( pt.x()+pt.y(), -pt.x() ), ret ) )
-            return false;
-         ret = _Ico.map( {0,1,2}, {0,2,3} ) * ret;
-         return true;
-      }
-      //if ( pt.y() < 0 )
-      //{
-      //   //if ( !toIcoCoordX( QPoint( -1-pt.y(), pt.x()+pt.y()+1 ), ret ) )
-      //   //   return false;
-      //   if ( !toIcoCoordX( QPoint( -pt.y(), pt.x()+pt.y() ), ret ) ) // (5,-1) -> (1,4)
-      //      return false;
-      //   ret = _Ico.map( {0,1,2}, {0,5,1} ) * ret;
-      //   return true;
-      //}
-
-      for ( int i = 0; i < (int) _HexToModels.size(); i++ )
-      {
-         ret = _HexToModels[i] * XYZ( pt.x(), pt.y(), 0 );
-         XYZ icoWeights = toMatrix( _Icos[i][0], _Icos[i][1], _Icos[i][2] ).inverted() * ret;
-         if ( icoWeights.x < -1e-10 || icoWeights.y < -1e-10 || icoWeights.z < -1e-10 )
-            continue; // check if pattern is past the surface         
-         return true;
-      }
-
-      return false;
-   }
-
-public:
-   IcoSymmetry _Ico;
-   int EXTENSIONS;
-   XYZ _Center;
-   vector<QMtx4x4> _HexToModels;
-   vector<vector<XYZ>> _Icos;
 };
 
 class Graph
@@ -589,7 +364,7 @@ public:
       int _Color;
       vector<VertexPtr> _Vertices;
       //bool _IsSymmetrical = false;
-      MatrixSymmetryMap* _SymmetryMap = nullptr;
+      shared_ptr<MatrixSymmetryMap> _SymmetryMap;
 
       bool hasVertex( const VertexPtr& a ) const { 
          for ( const VertexPtr& b : _Vertices )
@@ -651,8 +426,6 @@ private:
    void neighbors( const VertexPtr& vtx, int depth, vector<VertexPtr>& v, unordered_set<uint64_t>& st ) const;
 
 public:
-   IcoSymmetry _Ico;
-
    vector<Vertex> _Vertices;
    vector<Tile> _Tiles;
 };
@@ -683,7 +456,7 @@ public:
       void eraseNeighbor( const VertexPtr& a );
       int _Index;
       //bool _IsSymmetrical;
-      MatrixSymmetryMap* _SymmetryMap = MatrixSymmetryMap::symmetryNone();
+      shared_ptr<MatrixSymmetryMap> _SymmetryMap = MatrixSymmetryMap::symmetryNone();
       XYZ _Pos;
       int _Color;
       vector<VertexPtr> _Neighbors;
@@ -716,6 +489,5 @@ public:
    VertexPtr premul( const VertexPtr& vtx, const QMtx4x4& mtx ) const;
    
 public:
-   IcoSymmetry _Ico;
    vector<Vertex> _Vertices;
 };

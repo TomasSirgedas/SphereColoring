@@ -325,13 +325,15 @@ QImage Drawing::makeImage( Graph& graph )
 
    QMtx4x4 modelToBitmap = Drawing::modelToBitmap();
 
-   IcoSymmetry ico;
-   XYZ ico0 = ico[0].normalized() * radius;
-   XYZ ico01 = (( ico[0] + ico[1] ) / 2).normalized() * radius;
-   XYZ ico02 = (( ico[0] + ico[2] ) / 2).normalized() * radius;
-   XYZ ico012 = (( ico[0] + ico[1] + ico[2] ) / 3).normalized() * radius;
-   XYZ ico015 = (( ico[0] + ico[1] + ico[5] ) / 3).normalized() * radius;
-   XYZ ico1 = ico[1].normalized() * radius;
+   //IcoSymmetry ico;
+   //XYZ ico0 = ico[0].normalized() * radius;
+   //XYZ ico01 = (( ico[0] + ico[1] ) / 2).normalized() * radius;
+   //XYZ ico02 = (( ico[0] + ico[2] ) / 2).normalized() * radius;
+   //XYZ ico012 = (( ico[0] + ico[1] + ico[2] ) / 3).normalized() * radius;
+   //XYZ ico015 = (( ico[0] + ico[1] + ico[5] ) / 3).normalized() * radius;
+   //XYZ ico1 = ico[1].normalized() * radius;
+
+
 
    //TileDots tileDots = generateSphereColoringDots( _Custom[0] );
    //Graph graph( tileDots );
@@ -345,7 +347,7 @@ QImage Drawing::makeImage( Graph& graph )
    {
       Graph::VertexPtr bestVtx;
       double bestDist = 9999;
-      for ( const IcoSymmetry::Config& config : ico.matrices() )
+      for ( const ISymmetry::Config& config : GlobalSymmetry::matrices() )
       for ( const Graph::VertexPtr& a_ : graph.rawVertices() )
       {
          Graph::VertexPtr a( a_._Index, config.m );
@@ -380,7 +382,7 @@ QImage Drawing::makeImage( Graph& graph )
 
 
    for ( int stage : { 1, 3, 4, 6, 7, 8, 9, 10, 11 } )
-      for ( const IcoSymmetry::Config& config : ico.matrices() )
+      for ( const ISymmetry::Config& config : GlobalSymmetry::matrices() )
       {
          const QMtx4x4& m = config.m;
 
@@ -389,7 +391,7 @@ QImage Drawing::makeImage( Graph& graph )
                   
          if ( stage == 1 && !_ShowDual )
          {
-            Perm quadPerm = ico.colorPermOf( m );
+            Perm quadPerm = GlobalSymmetry::colorPermOf( m );
 
             int alpha = 255;
             //int alpha = 128;
@@ -451,7 +453,7 @@ QImage Drawing::makeImage( Graph& graph )
             const double TOLERANCE = 1e-5;
 
             painter.setBrush( Qt::NoBrush );
-            for ( const IcoSymmetry::Config& config : ico.matrices() )
+            for ( const ISymmetry::Config& config : GlobalSymmetry::matrices() )
             for ( const auto& pr : _Simulation->_KeepCloseFars )
             {
                XYZ a = config.m * _Simulation->_Graph->posOf( pr.a );
@@ -475,7 +477,7 @@ QImage Drawing::makeImage( Graph& graph )
          {
             painter.setPen( QPen( QColor(0,0,0,128), 1 ) );
             painter.setBrush( Qt::NoBrush );
-            for ( const IcoSymmetry::Config& config : ico.matrices() )
+            for ( const ISymmetry::Config& config : GlobalSymmetry::matrices() )
                for ( const auto& pr : _Simulation->_KeepCloseFars )
                {  
                   XYZ a = graph.posOf( pr.a.premul( config.m ) );
@@ -522,27 +524,27 @@ QImage Drawing::makeImage( Graph& graph )
                //   painter.drawEllipse( toBitmap( p ), 2, 2 );
             }
          }
-         // draw outline of 1/60th sector
-         if ( stage == 7 && _DrawSectors )
-         {
-            painter.setPen( QPen( QColor(255,255,255,192), 1 ) );
-            painter.setBrush( Qt::NoBrush );
-         //   for ( int y = -1; y < 4; y++ )
-         //      for ( int x = 0; x < 10; x++ )
-         //      {
-         //         XYZ p = graph._HexCoords.toIcoCoord( QPoint( x, y ) ).normalized() * radius;
-         //         painter.drawEllipse( toBitmap( p ), 2, 2 );
-         //      }
+         //// draw outline of 1/60th sector
+         //if ( stage == 7 && _DrawSectors )
+         //{
+         //   painter.setPen( QPen( QColor(255,255,255,192), 1 ) );
+         //   painter.setBrush( Qt::NoBrush );
+         ////   for ( int y = -1; y < 4; y++ )
+         ////      for ( int x = 0; x < 10; x++ )
+         ////      {
+         ////         XYZ p = graph._HexCoords.toIcoCoord( QPoint( x, y ) ).normalized() * radius;
+         ////         painter.drawEllipse( toBitmap( p ), 2, 2 );
+         ////      }
+         ////}
+         //   vector<XYZ> polyCurve = calcPolyCurveOnSphere( { ico0, ico01, ico012, ico02 }, .1, 1 );
+         //   painter.drawPolygon( toQPolygonF( modelRotation() * m * polyCurve, modelToBitmapNoRot() ) );
          //}
-            vector<XYZ> polyCurve = calcPolyCurveOnSphere( { ico0, ico01, ico012, ico02 }, .1, 1 );
-            painter.drawPolygon( toQPolygonF( modelRotation() * m * polyCurve, modelToBitmapNoRot() ) );
-         }
          // edges
          if ( stage == 9 && config.state == vector<int>{0,0,0,0} && _ShowDual )
          {
             painter.setBrush( Qt::NoBrush );
 
-            //for ( const IcoSymmetry::Config& config : ico.matrices() )
+            //for ( const GlobalSymmetry::Config& config : GlobalSymmetry::matrices() )
             {
                for ( const Dual::VertexPtr& a : dual->allVertices() )
                {
@@ -578,8 +580,8 @@ QImage Drawing::makeImage( Graph& graph )
                      painter.drawText( toBitmap( pos ) + QPointF( 0, -4 ), QString::number( dual->idOf( a ) ) );
 
 
-                  if ( dual->_Vertices[a._Index]._SymmetryMap->_SymmetricMatrices[0].size() == 5 )
-                     painter.drawText( toBitmap( pos ) + QPointF( 0, -12 ), QString::number( ico.id( dual->posOf( a ).normalized() * 1.90211303259 ) ) );
+                  //if ( dual->_Vertices[a._Index]._SymmetryMap->_SymmetricMatrices[0].size() == 5 )
+                  //   painter.drawText( toBitmap( pos ) + QPointF( 0, -12 ), QString::number( ico.id( dual->posOf( a ).normalized() * 1.90211303259 ) ) );
                }
             }
          }
@@ -601,7 +603,7 @@ QImage Drawing::makeImage( Graph& graph )
          //   painter.setBrush( Qt::NoBrush );
          //   painter.setPen( QColor( 255,255,255 ) );
 
-         //   for ( const IcoSymmetry::Config& config : ico.matrices() )
+         //   for ( const GlobalSymmetry::Config& config : GlobalSymmetry::matrices() )
          //   {
          //      XYZ p = config.m * ( ico[0]*3 + ico[1] + ico[2] ).normalized() * _Radius;
          //      if ( !isOnNearSide( p ) )
@@ -609,7 +611,7 @@ QImage Drawing::makeImage( Graph& graph )
          //      painter.drawText( toBitmap( p ), QString::number(MatrixIndexMap::indexOf(config.m)) );
          //   }
 
-         //   //for ( const IcoSymmetry::Config& config : ico.matrices() )
+         //   //for ( const GlobalSymmetry::Config& config : GlobalSymmetry::matrices() )
          //   //   for ( const auto& pr : _Simulation->_KeepCloseFars )
          //   //   {  
          //   //      XYZ a = graph.posOf( pr.a.premul( config.m ) );

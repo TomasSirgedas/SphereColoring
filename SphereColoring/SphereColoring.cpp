@@ -22,9 +22,7 @@ using namespace std;
 shared_ptr<Graph> makeGraph( shared_ptr<const Dual> dual, double radius )
 {
    shared_ptr<Graph> graph( new Graph );
-
-   IcoSymmetry ico;
-
+   
    std::map<set<int>, int> polygonToTileIndex;
 
    for ( int k = 0; k < (int) dual->_Vertices.size(); k++ )
@@ -46,7 +44,7 @@ shared_ptr<Graph> makeGraph( shared_ptr<const Dual> dual, double radius )
             polyAsSet.insert( dual->idOf( c ) );
 
          {
-            for ( const IcoSymmetry::Config& config : ico.matrices() )
+            for ( const IcoSymmetry::Config& config : GlobalSymmetry::matrices() )
             {
                set<int> polyAsSet;
                for ( const Dual::VertexPtr& c : poly )

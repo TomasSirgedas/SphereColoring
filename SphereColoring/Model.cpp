@@ -221,7 +221,7 @@ void Graph::neighbors( const VertexPtr& vtx, int depth, vector<Graph::VertexPtr>
 
 int Graph::colorOf( const TilePtr& tile ) const
 {
-   Perm perm = _Ico.colorPermOf( tile._Mtx );
+   Perm perm = GlobalSymmetry::colorPermOf( tile._Mtx );
    return perm[_Tiles[tile._Index]._Color];
 }
 
@@ -301,7 +301,7 @@ bool Graph::eq( const VertexPtr& a, const VertexPtr& b ) const
 vector<Graph::VertexPtr> Graph::allVertices() const
 {
    vector<VertexPtr> ret;
-   for ( const IcoSymmetry::Config& config : _Ico.matrices() )
+   for ( const ISymmetry::Config& config : GlobalSymmetry::matrices() )
       for ( const Vertex& vtx : _Vertices )
          ret.push_back( VertexPtr( vtx._Index, config.m ) );
    return ret;
@@ -326,7 +326,7 @@ vector<Graph::TilePtr> Graph::rawTiles() const
 vector<Graph::TilePtr> Graph::allTiles() const
 {
    vector<TilePtr> ret;
-   for ( const IcoSymmetry::Config& config : _Ico.matrices() )
+   for ( const ISymmetry::Config& config : GlobalSymmetry::matrices() )
       for ( int i = 0; i < (int) _Tiles.size(); i++ )
          ret.push_back( TilePtr( i, QMtx4x4() ).premul( config.m ) );
    return ret;
@@ -522,7 +522,7 @@ vector<Dual::VertexPtr> Dual::allVertices() const
 {
    vector<Dual::VertexPtr> ret;
    for ( const Vertex& vertex : _Vertices )
-   for ( const IcoSymmetry::Config& config : _Ico.matrices() )
+   for ( const ISymmetry::Config& config : GlobalSymmetry::matrices() )
    {
       VertexPtr a( vertex._Index, config.m );
       if ( !isDuplicate( a ) )
@@ -606,13 +606,13 @@ vector<Dual::VertexPtr> Dual::sortedNeighborsOf( const VertexPtr& a ) const
 
 int Dual::colorOf( const VertexPtr& vtx ) const
 {
-   Perm perm = _Ico.colorPermOf( vtx._Mtx );
+   Perm perm = GlobalSymmetry::colorPermOf( vtx._Mtx );
    return perm[_Vertices[vtx._Index]._Color];
 }
 
 void Dual::setColorOf( const VertexPtr& vtx, int color )
 {
-   Perm perm = _Ico.colorPermOf( vtx._Mtx );
+   Perm perm = GlobalSymmetry::colorPermOf( vtx._Mtx );
    _Vertices[vtx._Index]._Color = perm.inverted()[color];
 }
 
