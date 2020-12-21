@@ -110,6 +110,7 @@ public:
 public:
    virtual Perm colorPermOf( const QMtx4x4& m ) const = 0;
    virtual vector<Config> matrices() const = 0;
+   virtual vector<XYZ> sectorOutline() const = 0;
 };
 
 class IcoSymmetry : public ISymmetry
@@ -135,7 +136,7 @@ public:
    {
       return ::map( vector<XYZ> { _Pts[a[0]], _Pts[a[1]], _Pts[a[2]] }, vector<XYZ> { _Pts[b[0]], _Pts[b[1]], _Pts[b[2]] } );
    }
-   vector<Config> matrices() const
+   vector<Config> matrices() const override
    {
       vector<Config> ret;
 
@@ -197,12 +198,20 @@ public:
       return Perm( {tetrColorOf(p012),tetrColorOf(p023),tetrColorOf(p034),tetrColorOf(p045),tetrColorOf(p051),5,6} );  
    }
 
-   Perm colorPermOf( const QMtx4x4& m ) const
+   Perm colorPermOf( const QMtx4x4& m ) const override
    {            
       return Perm( { id( m*_Pts[0] )%6, id( m*_Pts[1] )%6, id( m*_Pts[2] )%6, id( m*_Pts[3] )%6, id( m*_Pts[4] )%6, id( m*_Pts[5] )%6, 6} );        
       //return tetrColorPermOf( m );
    }
 
+   vector<XYZ> sectorOutline() const override
+   {
+      XYZ ico0 = _Pts[0];
+      XYZ ico01 = _Pts[0] + _Pts[1];
+      XYZ ico02 = _Pts[0] + _Pts[2];
+      XYZ ico012 = _Pts[0] + _Pts[1] + _Pts[2];
+      return { ico0, ico01, ico012, ico02 };
+   }
 public:
    vector<XYZ> _Pts;
 };
@@ -217,6 +226,13 @@ public:
    static ISymmetry* symmetry() { return theInstance()._Symmetry.get(); }
    static Perm colorPermOf( const QMtx4x4& m ) { return symmetry()->colorPermOf( m ); }
    static vector<ISymmetry::Config> matrices() { return symmetry()->matrices(); }
+   static vector<XYZ> sectorOutline( double radius ) 
+   { 
+      vector<XYZ> ret = symmetry()->sectorOutline(); 
+      for ( XYZ& p : ret )
+         p = p.normalized() * radius;
+      return ret;
+   }
       
 public:
    shared_ptr<ISymmetry> _Symmetry;

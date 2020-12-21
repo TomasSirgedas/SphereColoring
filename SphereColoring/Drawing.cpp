@@ -524,21 +524,14 @@ QImage Drawing::makeImage( Graph& graph )
                //   painter.drawEllipse( toBitmap( p ), 2, 2 );
             }
          }
-         //// draw outline of 1/60th sector
-         //if ( stage == 7 && _DrawSectors )
-         //{
-         //   painter.setPen( QPen( QColor(255,255,255,192), 1 ) );
-         //   painter.setBrush( Qt::NoBrush );
-         ////   for ( int y = -1; y < 4; y++ )
-         ////      for ( int x = 0; x < 10; x++ )
-         ////      {
-         ////         XYZ p = graph._HexCoords.toIcoCoord( QPoint( x, y ) ).normalized() * radius;
-         ////         painter.drawEllipse( toBitmap( p ), 2, 2 );
-         ////      }
-         ////}
-         //   vector<XYZ> polyCurve = calcPolyCurveOnSphere( { ico0, ico01, ico012, ico02 }, .1, 1 );
-         //   painter.drawPolygon( toQPolygonF( modelRotation() * m * polyCurve, modelToBitmapNoRot() ) );
-         //}
+         // draw outline of 1/60th sector
+         if ( stage == 7 && _DrawSectors )
+         {
+            painter.setPen( QPen( QColor(255,255,255,192), 1 ) );
+            painter.setBrush( Qt::NoBrush );
+            vector<XYZ> polyCurve = calcPolyCurveOnSphere( GlobalSymmetry::sectorOutline( radius ), .1, 1 );
+            painter.drawPolygon( toQPolygonF( modelRotation() * m * polyCurve, modelToBitmapNoRot() ) );
+         }
          // edges
          if ( stage == 9 && config.state == vector<int>{0,0,0,0} && _ShowDual )
          {
