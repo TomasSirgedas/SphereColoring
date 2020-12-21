@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29409.12
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SphereColoring", "SphereColoring\SphereColoring.vcxproj", "{044A5DC3-27C5-4EEF-9707-70F4560603F9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{044A5DC3-27C5-4EEF-9707-70F4560603F9}.Debug|x86.ActiveCfg = Debug|Win32
+		{044A5DC3-27C5-4EEF-9707-70F4560603F9}.Debug|x86.Build.0 = Debug|Win32
+		{044A5DC3-27C5-4EEF-9707-70F4560603F9}.Release|x86.ActiveCfg = Release|Win32
+		{044A5DC3-27C5-4EEF-9707-70F4560603F9}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4AE50C91-0EFB-450A-A1CD-6F3A39B630C9}
+	EndGlobalSection
+EndGlobal
