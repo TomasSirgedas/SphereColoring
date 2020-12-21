@@ -20,6 +20,8 @@ public:
    void handleRightButton( const QPoint& mousePos, bool isMove, bool isClick, bool isUnclick );
    
    Dual::VertexPtr dualVertexNearest( const QPoint& mousePos );
+   void toggleSymmetryVertex( int idx );
+   void deleteVertex();
 
 private:
    Ui::SphereColoringClass ui;

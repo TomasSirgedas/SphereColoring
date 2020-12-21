@@ -313,7 +313,13 @@ SphereColoring::SphereColoring( QWidget *parent )
    QObject::connect( new QShortcut(QKeySequence(Qt::Key_K), this ), &QShortcut::activated, [this]() { addVertex( 8 ); } );
    QObject::connect( new QShortcut(QKeySequence(Qt::Key_9), this ), &QShortcut::activated, [this]() { addVertex( 9 ); } );
    QObject::connect( new QShortcut(QKeySequence(Qt::Key_N), this ), &QShortcut::activated, [this]() { addVertex( 9 ); } );
-   
+
+   QObject::connect( new QShortcut(QKeySequence(Qt::Key_F1), this ), &QShortcut::activated, [this]() { toggleSymmetryVertex( 0 ); } );
+   QObject::connect( new QShortcut(QKeySequence(Qt::Key_F2), this ), &QShortcut::activated, [this]() { toggleSymmetryVertex( 1 ); } );
+   QObject::connect( new QShortcut(QKeySequence(Qt::Key_F3), this ), &QShortcut::activated, [this]() { toggleSymmetryVertex( 2 ); } );
+
+   QObject::connect( new QShortcut(QKeySequence(Qt::Key_Delete), this ), &QShortcut::activated, [this]() { deleteVertex(); } );
+
 
    //connect( ui.permSlider, &QSlider::valueChanged, [this]( int ) {
    //   ui.drawing->_PermIndex = ui.permSlider->value();
@@ -401,4 +407,32 @@ void SphereColoring::handleMouse( const QPoint& mousePos, bool isMove, bool isCl
    {
       _DragDualVtx = ui.drawing->dualVertexNearest( mousePos, 50. );
    }
+}
+
+void SphereColoring::toggleSymmetryVertex( int idx )
+{
+   vector<XYZ> sym = GlobalSymmetry::symmetryPoints( _Simulation._Radius );
+   if ( idx >= (int) sym.size() )
+      return;
+
+   const XYZ& p = sym[idx];
+
+   //int vertexIdx = -1;
+   //for ( const Dual::Vertex& vtx : _Simulation._Dual->_Vertices )
+   //{
+   //   if ( vtx._Pos.dist2( p ) < 1e-12 )
+   //      vertexIdx = vtx._Index;
+   //}
+}
+
+
+void SphereColoring::deleteVertex()
+{
+   Dual::VertexPtr existingVertex = ui.drawing->dualVertexNearest( ui.drawing->mousePos(), 6. );
+   if ( existingVertex.isValid() )
+   {
+      _Simulation._Dual->deleteVertex( existingVertex._Index );
+   }
+
+   redrawSim();
 }

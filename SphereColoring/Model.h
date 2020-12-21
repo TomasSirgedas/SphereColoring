@@ -111,6 +111,7 @@ public:
    virtual Perm colorPermOf( const QMtx4x4& m ) const = 0;
    virtual vector<Config> matrices() const = 0;
    virtual vector<XYZ> sectorOutline() const = 0;
+   virtual vector<XYZ> symmetryPoints() const = 0;
 };
 
 class IcoSymmetry : public ISymmetry
@@ -212,6 +213,14 @@ public:
       XYZ ico012 = _Pts[0] + _Pts[1] + _Pts[2];
       return { ico0, ico01, ico012, ico02 };
    }
+   vector<XYZ> symmetryPoints() const override
+   {
+      XYZ ico0 = _Pts[0];
+      XYZ ico01 = _Pts[0] + _Pts[1];
+      XYZ ico012 = _Pts[0] + _Pts[1] + _Pts[2];
+      return { ico0, ico01, ico012 };
+   }
+
 public:
    vector<XYZ> _Pts;
 };
@@ -232,7 +241,14 @@ public:
       for ( XYZ& p : ret )
          p = p.normalized() * radius;
       return ret;
-   }
+   }      
+   static vector<XYZ> symmetryPoints( double radius ) 
+   { 
+      vector<XYZ> ret = symmetry()->symmetryPoints(); 
+      for ( XYZ& p : ret )
+         p = p.normalized() * radius;
+      return ret;
+   }   
       
 public:
    shared_ptr<ISymmetry> _Symmetry;
@@ -503,6 +519,7 @@ public:
    VertexPtr next( const VertexPtr& a, const VertexPtr& b ) const;
    vector<Dual::VertexPtr> polygon( const VertexPtr& a, const VertexPtr& b ) const;
    VertexPtr premul( const VertexPtr& vtx, const QMtx4x4& mtx ) const;
+   void deleteVertex( int idx );
    
 public:
    vector<Vertex> _Vertices;

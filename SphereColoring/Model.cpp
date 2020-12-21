@@ -654,3 +654,19 @@ Dual::VertexPtr Dual::premul( const VertexPtr& vtx, const QMtx4x4& mtx ) const
 { 
    return toReal( VertexPtr( vtx._Index, mtx * vtx._Mtx ) ); 
 }
+
+void Dual::deleteVertex( int idx )
+{
+   auto newIndex = [&]( int i ){ return i > idx ? i-1 : i; };
+
+   _Vertices.erase( _Vertices.begin() + idx );
+   for ( Vertex& vtx : _Vertices )
+   {
+      vtx._Index = newIndex( vtx._Index );
+      
+      vtx._Neighbors.erase( remove_if( vtx._Neighbors.begin(), vtx._Neighbors.end(), [&]( const VertexPtr& a ) { return a._Index == idx; } ), vtx._Neighbors.end() );
+
+      for ( auto& b : vtx._Neighbors )
+         b._Index = newIndex( b._Index );
+   }
+}
