@@ -334,8 +334,8 @@ class GlobalSymmetry
 {
 private:
    //GlobalSymmetry() { _Symmetry.reset( new IcoSymmetry ); }
-   //GlobalSymmetry() { _Symmetry.reset( new Rot3Symmetry ); }
-   GlobalSymmetry() { _Symmetry.reset( new Rot5Symmetry ); }
+   GlobalSymmetry() { _Symmetry.reset( new Rot3Symmetry ); }
+   //GlobalSymmetry() { _Symmetry.reset( new Rot5Symmetry ); }
 
 public:
    static GlobalSymmetry& theInstance() { static GlobalSymmetry s_theInstance; return s_theInstance; }
@@ -356,6 +356,12 @@ public:
          p = p.normalized() * radius;
       return ret;
    }   
+   static void setSymmetry( const string& name )
+   {      
+      if      ( name == Rot3Symmetry().name() ) theInstance()._Symmetry.reset( new Rot3Symmetry );
+      else if ( name == Rot5Symmetry().name() ) theInstance()._Symmetry.reset( new Rot5Symmetry );
+      else                                      theInstance()._Symmetry.reset( new IcoSymmetry );
+   }
       
 public:
    shared_ptr<ISymmetry> _Symmetry;
@@ -374,6 +380,7 @@ private:
    }
 public:
    static MatrixIndexMap& theInstance() { static MatrixIndexMap s_theInstance; return s_theInstance; }
+   static void update() { theInstance() = MatrixIndexMap(); }
    static int indexOf( const QMtx4x4& m ) 
    { 
       int id = matrixId( m );

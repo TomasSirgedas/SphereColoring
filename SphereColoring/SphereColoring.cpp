@@ -105,7 +105,7 @@ void saveDual( const QString& filename, const Dual& dual )
    for ( const Dual::Vertex& a : dual._Vertices )
       for ( const Dual::VertexPtr& b : a._Neighbors ) if ( a._Index <= b._Index )
          edges.push_back( QJsonArray { a._Index, b._Index, MatrixIndexMap::indexOf( b._Mtx ) } );
-   QJsonObject graph = { { "vertices", vertices }, { "edges", edges } };         
+   QJsonObject graph = { { "vertices", vertices }, { "edges", edges }, { "symmetry", QString::fromStdString( GlobalSymmetry::symmetry()->name() ) } };         
    {
       QFile f( filename );
       f.open(QFile::WriteOnly);
@@ -122,6 +122,10 @@ shared_ptr<Dual> loadDual( const QString& filename )
    QFile f( filename );
    f.open( QFile::ReadOnly );
    QJsonDocument doc = QJsonDocument::fromJson( f.readAll() );
+
+   GlobalSymmetry::setSymmetry( doc["symmetry"].toString().toStdString() );
+   MatrixIndexMap::update();
+
    for ( const QJsonValue& vertex_ : doc["vertices"].toArray() )
    {
       QJsonObject vertex = vertex_.toObject();
@@ -231,7 +235,9 @@ SphereColoring::SphereColoring( QWidget *parent )
       _Simulation._Dual = dual;
       _Simulation._Radius = dual->_Vertices[0]._Pos.len();
       ui.lineEdit1->setText( QString::number( _Simulation._Radius ) );
-      redrawSim();
+
+      ui.dualToGraphButton->click();
+      //redrawSim();
    } );
    connect( ui.saveButton, &QPushButton::pressed, [this]() {
       QString filename = QFileDialog::getSaveFileName( this, "Save Graph", QString(), "*.dual" );
