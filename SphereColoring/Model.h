@@ -133,7 +133,7 @@ public:
       {
          _Configs.push_back( Config { _Rot.pow( i ), {i}, _Perm.pow( i ) } );
       }
-      
+
       for ( int i = 0; i < (int) _Configs.size(); i++ )
       {
          _MatrixIdToConfigIndex[matrixId(_Configs[i].m)] = i;
@@ -141,6 +141,55 @@ public:
    }
 
    string name() const override { return "rot3"; }
+   Perm colorPermOf( const QMtx4x4& m ) const override
+   {      
+      uint64_t id = matrixId( m );
+      if ( !_MatrixIdToConfigIndex.count( id ) )
+         throw 777;
+      return _Configs[_MatrixIdToConfigIndex.at(id)].colorPerm;
+   }
+   vector<Config> matrices() const override
+   {
+      return _Configs;
+   }
+   vector<XYZ> sectorOutline() const override
+   {
+      return { XYZ(0,1,0), XYZ(0,0,1), XYZ(0,-1,0), XYZ(0,0,1) };
+   }
+   vector<XYZ> symmetryPoints() const override
+   {
+      return { XYZ(0,1,0), XYZ(0,-1,0) };
+   }
+
+public:
+   QMtx4x4 _Rot;
+   Perm _Perm;
+   vector<Config> _Configs;
+   unordered_map<uint64_t, int> _MatrixIdToConfigIndex;
+};
+
+class Rot5Symmetry : public ISymmetry
+{
+public:
+   Rot5Symmetry()
+   {
+      int N = 5;
+      const double PI = acos(0.) * 2.;
+      _Rot = QMtx4x4::rotationY( 2*PI/N );
+      _Perm = Perm( {1,2,3,4,0,5,6} );
+
+      for ( int i = 0; i < N; i++ )
+      {
+         _Configs.push_back( Config { _Rot.pow( i ), {i}, _Perm.pow( i ) } );
+      }
+
+      for ( int i = 0; i < (int) _Configs.size(); i++ )
+      {
+         _MatrixIdToConfigIndex[matrixId(_Configs[i].m)] = i;
+      }
+   }
+
+   string name() const override { return "rot5"; }
    Perm colorPermOf( const QMtx4x4& m ) const override
    {      
       uint64_t id = matrixId( m );
@@ -284,7 +333,8 @@ class GlobalSymmetry
 {
 private:
    //GlobalSymmetry() { _Symmetry.reset( new IcoSymmetry ); }
-   GlobalSymmetry() { _Symmetry.reset( new Rot3Symmetry ); }
+   //GlobalSymmetry() { _Symmetry.reset( new Rot3Symmetry ); }
+   GlobalSymmetry() { _Symmetry.reset( new Rot5Symmetry ); }
 
 public:
    static GlobalSymmetry& theInstance() { static GlobalSymmetry s_theInstance; return s_theInstance; }

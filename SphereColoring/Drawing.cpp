@@ -52,14 +52,14 @@ XYZ lineSphereIntersection( const XYZ& p0, const XYZ& p1, double radius )
 
 // dir == 1, dir == -1 --> curve direction
 // dir == 0 --> pick shorter curve direction
-vector<XYZ> calcCurve2( const XYZ& p0, const XYZ& p1, const XYZ& center, double maxDistance, int dir )
+vector<XYZ> calcCurve2( const XYZ& p0, const XYZ& p1, const XYZ& center, double maxDistance, int dir, bool addP0 )
 {
    if ( p0.dist2(p1) < 1e-14 )
       return {};
    XYZ a = center.len2() < 1e-14 ? (p0^p1).normalized() : center.normalized();
    if ( (a^p0).len2() < 1e-14 )
       return {}; // p is on the axis
-      
+         
    XYZ v = (a^p0).normalized();
    XYZ u = v^a;
    double angle = atan2( p1*v, p1*u );
@@ -74,6 +74,8 @@ vector<XYZ> calcCurve2( const XYZ& p0, const XYZ& p1, const XYZ& center, double 
    int numSegments = (int) ceil( dist / maxDistance );
 
    vector<XYZ> ret;
+   if ( addP0 )
+      ret.push_back( p0 );
    for ( int i = 1; i <= numSegments; i++ )
    {
       double t = (double)i / numSegments;
@@ -89,7 +91,7 @@ vector<XYZ> calcPolyCurveOnSphere( const vector<XYZ>& v, double maxDistance, int
    vector<XYZ> ret;
    for ( int i = 0; i < (int) v.size(); i++ )
    {
-      vector<XYZ> segment = calcCurve2( v[i], v[(i+1)%v.size()], XYZ(0,0,0), maxDistance, dir );
+      vector<XYZ> segment = calcCurve2( v[i], v[(i+1)%v.size()], XYZ(0,0,0), maxDistance, dir, false );
       ret.insert( ret.end(), segment.begin(), segment.end() );
    }
    return ret;
@@ -128,9 +130,9 @@ vector<XYZ> calcTileOutline( const Graph& graph, const Graph::TilePtr& tile, dou
       Graph::VertexPtr c = graph.calcCurve( a, b ); // c = center of curve
       vector<XYZ> curve;
       if ( c.isValid() )
-         curve = calcCurve2( graph.posOf( a ), graph.posOf( b ), graph.posOf( c ), maxSpacing, 0 );
+         curve = calcCurve2( graph.posOf( a ), graph.posOf( b ), graph.posOf( c ), maxSpacing, 0, false );
       else
-         curve = calcCurve2( graph.posOf( a ), graph.posOf( b ), XYZ(), maxSpacing, 1 );
+         curve = calcCurve2( graph.posOf( a ), graph.posOf( b ), XYZ(), maxSpacing, 1, false );
       ret.insert( ret.end(), curve.begin(), curve.end() );
    }
 
@@ -187,7 +189,7 @@ vector<XYZ> expandOutlineOnSphere( const vector<XYZ>& v, double maxSpacing )
       XYZ p0 = calcOutlinePt( v[i1], v[i0], R );
       XYZ p1 = calcOutlinePt( v[i2], v[i1], R );
 
-      vector<XYZ> curve = calcCurve2( p0, p1, v[i1], maxSpacing, 0 );
+      vector<XYZ> curve = calcCurve2( p0, p1, v[i1], maxSpacing, 0, false );
       ret.insert( ret.end(), curve.begin(), curve.end() );
    }
 
@@ -234,6 +236,29 @@ QPolygonF toQPolygonF( vector<XYZ> path, const QMtx4x4& modelToBitmap )
    }
 
    return poly;
+}
+
+
+QPainterPath outlineToQPainterPath( const vector<XYZ>& path, function<QPointF(const XYZ&)> toBitmap, bool closePath )
+{   
+   QPainterPath ret;
+   bool prevVisible = false;
+   for ( int i = 0; i < (int)path.size(); i++ )
+   {
+      bool isVisible = path[i].z < 0;
+      if ( isVisible )
+      {
+         if ( prevVisible )
+            ret.lineTo( toBitmap( path[i] ) );
+         else
+            ret.moveTo( toBitmap( path[i] ) );
+      }
+      prevVisible = isVisible;
+   }
+   if ( closePath && !path.empty() && path[0].z < 0 && prevVisible )
+      ret.lineTo( toBitmap( path[0] ) );
+
+   return ret;
 }
 
 
@@ -387,7 +412,7 @@ QImage Drawing::makeImage( Graph& graph )
          const QMtx4x4& m = config.m;
 
          auto toBitmap = [&]( const XYZ& pos ) { return ( modelToBitmap * m * pos ).toPointF(); };
-         auto toBitmapNoRotate = [&]( const XYZ& pos ) { return ( modelToBitmap * pos ).toPointF(); };
+         auto toBitmapNoRotate = [&]( const XYZ& pos ) { return pos.toPointF(); };
                   
          if ( stage == 1 && !_ShowDual )
          {
@@ -470,15 +495,28 @@ QImage Drawing::makeImage( Graph& graph )
          }    
          if ( stage == 4 && config.isHomeState() && _DrawRigidEDs && !_ShowDual )
          {
-            painter.setPen( QPen( QColor(0,0,0,128), 1 ) );
+            painter.setPen( QPen( QColor(0,0,0,96), 2 ) );
             painter.setBrush( Qt::NoBrush );
             for ( const ISymmetry::Config& config : GlobalSymmetry::matrices() )
-               for ( const auto& pr : _Simulation->_KeepCloseFars )
+               for ( const auto& pr : _Simulation->_KeepCloseFars ) if ( pr.a.id() < pr.b.id() )
                {  
                   XYZ a = graph.posOf( pr.a.premul( config.m ) );
                   XYZ b = graph.posOf( pr.b.premul( config.m ) );
-                  if ( pr.keepClose && pr.keepFar && isOnNearSide( a ) && isOnNearSide( b )  )
-                     painter.drawLine( toBitmap( a ), toBitmap( b ) );
+
+                  if ( _DrawCurves )
+                  {
+                     if ( pr.keepClose && pr.keepFar && ( isOnNearSide( a ) || isOnNearSide( b ) ) )
+                     {
+                        vector<XYZ> line = calcCurve2( a, b, XYZ(), .1, 0, true );
+                        painter.drawPath( outlineToQPainterPath( modelToBitmap * line, toBitmapNoRotate, false/*don't close path*/ ) );
+                     }
+                  }
+                  else
+                  {
+                     if ( pr.keepClose && pr.keepFar && isOnNearSide( a ) && isOnNearSide( b )  )
+                        painter.drawLine( toBitmap( a ), toBitmap( b ) );
+                  }
+
                }
          }     
          if ( stage == 5 && config.isHomeState() && _LabelVertices && !_ShowDual )
@@ -501,17 +539,18 @@ QImage Drawing::makeImage( Graph& graph )
                   continue;
 
                vector<XYZ> outline = expandOutlineOnSphere( calcTileOutline( graph, tile, .02 ), .02 );
-               bool allOnNearSide = true;
-               for ( const XYZ& p : outline )
-                  if ( !isOnNearSide( p ) )
-                     allOnNearSide = false;
-               if ( !allOnNearSide )
-                  continue;
+               //bool allOnNearSide = true;
+               //for ( const XYZ& p : outline )
+               //   if ( !isOnNearSide( p ) )
+               //      allOnNearSide = false;
+               //if ( !allOnNearSide )
+               //   continue;
 
-               QPolygonF poly;
-               for ( const XYZ& p : outline )
-                  poly.append( toBitmap( p ) );               
-               painter.drawPolygon( poly );
+               //QPolygonF poly;
+               //for ( const XYZ& p : outline )
+               //   poly.append( toBitmap( p ) );               
+               //painter.drawPolygon( poly );
+               painter.drawPath( outlineToQPainterPath( modelToBitmap * outline, toBitmapNoRotate, true/*close the path*/ ) );
 
                //for ( const XYZ& p : expandOutlineOnSphere( calcTileOutline( graph, tile, .02 ), .02 ) )
                //   painter.drawEllipse( toBitmap( p ), 2, 2 );
