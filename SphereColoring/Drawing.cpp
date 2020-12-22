@@ -402,12 +402,14 @@ QImage Drawing::makeImage( Graph& graph )
             {
                Graph::TilePtr tile = tile_.premul( m );
 
-               bool tileVisible = false;
-               for ( const Graph::VertexPtr& a : graph.verticesForTile( tile ) )
-                  if ( isOnNearSide( graph.posOf( a ) ) )
-                     tileVisible = true;
-               if ( !tileVisible )
-                  continue;
+               //{
+               //   bool tileVisible = false;
+               //   for ( const Graph::VertexPtr& a : graph.verticesForTile( tile ) )
+               //      if ( isOnNearSide( graph.posOf( a ) ) )
+               //         tileVisible = true;
+               //   if ( !tileVisible )
+               //      continue;
+               //}
 
                painter.setPen( Qt::NoPen );
                painter.setBrush( withAlpha( tileColor( graph.colorOf(tile) ), alpha ) );
@@ -419,9 +421,7 @@ QImage Drawing::makeImage( Graph& graph )
                //   painter.drawPolygon( poly );
                //}
                {
-                  QPolygonF poly;                  
-                  for ( const XYZ& p : calcTileOutline( graph, tile, _DrawCurves ? .1 : 1 ) )
-                     poly.append( toBitmapNoRotate( p ) );
+                  QPolygonF poly = toQPolygonF( modelRotation() * calcTileOutline( graph, tile, _DrawCurves ? .02 : 1 ), modelToBitmapNoRot() );
                   painter.drawPolygon( poly );
                }
                idx++;
