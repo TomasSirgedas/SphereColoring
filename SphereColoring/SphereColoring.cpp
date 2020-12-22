@@ -118,13 +118,14 @@ shared_ptr<Dual> loadDual( const QString& filename )
    if ( filename.isEmpty() )
       return nullptr;
 
-   shared_ptr<Dual> dual( new Dual );
    QFile f( filename );
    f.open( QFile::ReadOnly );
    QJsonDocument doc = QJsonDocument::fromJson( f.readAll() );
 
    GlobalSymmetry::setSymmetry( doc["symmetry"].toString().toStdString() );
    MatrixIndexMap::update();
+
+   shared_ptr<Dual> dual( new Dual );
 
    for ( const QJsonValue& vertex_ : doc["vertices"].toArray() )
    {

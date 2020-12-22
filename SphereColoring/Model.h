@@ -443,18 +443,22 @@ public:
    //   return symmetryNone();
    //}
 
+   //static shared_ptr<MatrixSymmetryMap> symmetryNone() 
+   //{ 
+   //   static shared_ptr<MatrixSymmetryMap> s_noSymmetry( new MatrixSymmetryMap(XYZ(7,8,9)) ); 
+   //   return s_noSymmetry;
+   //}
    static shared_ptr<MatrixSymmetryMap> symmetryNone() 
    { 
-      static shared_ptr<MatrixSymmetryMap> s_noSymmetry( new MatrixSymmetryMap(XYZ(7,8,9)) ); 
-      return s_noSymmetry;
+      return shared_ptr<MatrixSymmetryMap>( new MatrixSymmetryMap(XYZ(7,8,9)) );
    }
 
 
    static shared_ptr<MatrixSymmetryMap> symmetryFor( const XYZ& p )
    {
       shared_ptr<MatrixSymmetryMap> ret( new MatrixSymmetryMap( p ) );
-      if ( !ret->hasSymmetry() )
-         return symmetryNone(); // less duplication
+      //if ( !ret->hasSymmetry() )
+      //   return symmetryNone(); // less duplication -- but loading different symmetry is a problem
       return ret;
    }
 
@@ -464,6 +468,7 @@ public:
 public:
    vector<int> _MapToReal;
    vector<vector<int>> _SymmetricMatrices; // (inverse of _MapToReal)
+   shared_ptr<MatrixSymmetryMap> _CachedSymmetryNone; 
 };
 
 class Graph
