@@ -56,7 +56,7 @@ public:
    double _Custom[10] = { 0 };
    QPoint _ClickPos;
    bool _ShowDual = true;
-   bool _DrawCurves = false;
+   bool _DrawCurves = true;
    bool _DrawRigidEDs = true;
    bool _LabelVertices = false;
    bool _LabelTiles = false;

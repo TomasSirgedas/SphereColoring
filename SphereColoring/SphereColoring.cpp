@@ -146,8 +146,8 @@ SphereColoring::SphereColoring( QWidget *parent )
    double radius = 5.0;
    //shared_ptr<Dual> dual = makeDual( radius );
    //shared_ptr<Dual> dual = loadDual( "GP7_1.dual" );
-   shared_ptr<Dual> dual = loadDual( "empty.dual" );
-   //shared_ptr<Dual> dual = loadDual( "temp.dual" );
+   //shared_ptr<Dual> dual = loadDual( "empty.dual" );
+   shared_ptr<Dual> dual = loadDual( "temp.dual" );
    //shared_ptr<Dual> dual = loadDual( "GP10_6!.dual" );
    radius = dual->_Vertices[0]._Pos.len();
    //shared_ptr<Graph> graph = makeGraph( dual, radius );
