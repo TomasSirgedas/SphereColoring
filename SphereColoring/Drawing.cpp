@@ -437,7 +437,10 @@ QImage Drawing::makeImage( Graph& graph )
                //}
 
                painter.setPen( Qt::NoPen );
-               painter.setBrush( withAlpha( tileColor( graph.colorOf(tile) ), alpha ) );
+               int tileCol = graph.colorOf(tile);
+               if ( tileCol == BLANK_COLOR )
+                  painter.setPen( QColor(0,0,0) );
+               painter.setBrush( withAlpha( tileColor( tileCol ), alpha ) );
 
                //{
                //   QPolygonF poly;                  

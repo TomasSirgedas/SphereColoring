@@ -154,7 +154,7 @@ SphereColoring::SphereColoring( QWidget *parent )
    shared_ptr<Graph> graph = nullptr;
    _Simulation.init( dual, graph, radius );
    ui.drawing->_Simulation = &_Simulation;
-   ui.lineEdit0->setText( "9" );
+   ui.lineEdit0->setText( "10" );
    ui.lineEdit1->setText( QString::number( _Simulation._Radius ) );
 
    connect( ui.yRotationSlider, &QSlider::valueChanged, [this]( int ) {
@@ -177,7 +177,7 @@ SphereColoring::SphereColoring( QWidget *parent )
    connect( ui.lineEdit1, &QLineEdit::editingFinished, [this]() {
       //ui.drawing->_Custom[1] = ui.lineEdit1->text().toDouble();
       _Simulation._Radius = ui.lineEdit1->text().toDouble();  
-      if ( _Simulation._Radius < 1 )
+      if ( _Simulation._Radius < .5 )
       {
          _Simulation._Radius = 5;
          ui.lineEdit1->setText( QString::number( _Simulation._Radius ) );
@@ -312,8 +312,8 @@ SphereColoring::SphereColoring( QWidget *parent )
    QObject::connect( new QShortcut(QKeySequence(Qt::Key_W), this ), &QShortcut::activated, [this]() { addVertex( 7 ); } );
    QObject::connect( new QShortcut(QKeySequence(Qt::Key_8), this ), &QShortcut::activated, [this]() { addVertex( 8 ); } );
    QObject::connect( new QShortcut(QKeySequence(Qt::Key_K), this ), &QShortcut::activated, [this]() { addVertex( 8 ); } );
-   QObject::connect( new QShortcut(QKeySequence(Qt::Key_9), this ), &QShortcut::activated, [this]() { addVertex( 9 ); } );
-   QObject::connect( new QShortcut(QKeySequence(Qt::Key_N), this ), &QShortcut::activated, [this]() { addVertex( 9 ); } );
+   QObject::connect( new QShortcut(QKeySequence(Qt::Key_9), this ), &QShortcut::activated, [this]() { addVertex( BLANK_COLOR ); } );
+   QObject::connect( new QShortcut(QKeySequence(Qt::Key_N), this ), &QShortcut::activated, [this]() { addVertex( BLANK_COLOR ); } );
 
    QObject::connect( new QShortcut(QKeySequence(Qt::Key_F1), this ), &QShortcut::activated, [this]() { toggleSymmetryVertex( 0 ); } );
    QObject::connect( new QShortcut(QKeySequence(Qt::Key_F2), this ), &QShortcut::activated, [this]() { toggleSymmetryVertex( 1 ); } );
@@ -353,8 +353,8 @@ void SphereColoring::redrawSim() const
 
 void SphereColoring::addVertex( int color )
 {
-   if ( color >= 7 )
-      return;
+   //if ( color >= 7 )
+   //   return;
 
    XYZ modelPos;
    

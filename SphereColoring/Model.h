@@ -11,6 +11,7 @@
 
 using namespace std;
 
+static const int BLANK_COLOR = 9;
 
 static int mod( int x, int m ) { return (x%m+m)%m; }
 
@@ -20,8 +21,8 @@ public:
    Perm() {}
    Perm( int n ) { for ( int i = 0; i < n; i++ ) v.push_back( i ); }
    Perm( const vector<int>& v ) : v(v) {}
-   int operator[]( int idx ) const { return v[idx]; }
-   int& operator[]( int idx ) { return v[idx]; }
+   int operator[]( int idx ) const { if ( idx >= v.size() ) return idx; return v[idx]; }
+   //int& operator[]( int idx ) { if ( idx >= v.size() ) return idx; return v[idx]; }
 
    Perm operator*( const Perm& rhs ) const
    {
@@ -34,7 +35,7 @@ public:
    {
       Perm ret( v.size() );
       for ( int i = 0; i < (int) v.size(); i++ )
-         ret[v[i]] = i;
+         ret.v[v[i]] = i;
       return ret;
    }
    Perm pow( int n ) const

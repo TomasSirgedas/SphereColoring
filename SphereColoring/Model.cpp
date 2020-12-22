@@ -258,8 +258,8 @@ Graph::TilePtr Graph::tileWithColor( const VertexPtr& vtx, int color ) const
 }
 
 bool Graph::mustBeFar( const VertexPtr& a, const VertexPtr& b ) const
-{
-   for ( const TilePtr& tileA : tilesAt( a ) )
+{   
+   for ( const TilePtr& tileA : tilesAt( a ) ) if ( colorOf( tileA ) != BLANK_COLOR )
    {
       TilePtr tileB = tileWithColor( b, colorOf( tileA ) );
       if ( tileB.isValid() && !eq( tileA, tileB ) )
@@ -362,6 +362,8 @@ vector<Graph::LineVertexConstraint> Graph::calcLineVertexConstraints() const
          for ( const TilePtr& tile : tilesAt( a0, a1 ) )
          {
             int color = colorOf( tile );
+            if ( color == BLANK_COLOR )
+               continue;
             for ( const Graph::VertexPtr& neighb : neighbors( a0, 6 ) )
             {
                TilePtr otherTile = tileWithColor( neighb, color );
@@ -461,6 +463,8 @@ Graph::VertexPtr Graph::calcCurve( const VertexPtr& a, const VertexPtr& b ) cons
    for ( int tileIdx = 0; tileIdx < 2; tileIdx++ )
    {
       int otherTileColor = colorOf( tiles[1-tileIdx] );
+      if ( otherTileColor == BLANK_COLOR )
+         continue;
       for ( const VertexPtr& vtx : verticesForTile( tiles[tileIdx] ) )
       {
          if ( vtx == a ) continue;
