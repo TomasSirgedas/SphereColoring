@@ -28,3 +28,11 @@ Matrix4x4 Matrix4x4::inverted() const
    ret.m[3] *= invdet;
    return ret;
 }
+
+Matrix4x4 Matrix4x4::pow( int pwr ) const
+{
+   Matrix4x4 ret;
+   for ( int i = 0; i < abs(pwr); i++ )
+      ret = ret * *this;
+   return pwr > 0 ? ret : ret.inverted();
+}

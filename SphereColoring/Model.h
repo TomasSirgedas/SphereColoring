@@ -98,6 +98,7 @@ public:
    {
       QMtx4x4 m;
       vector<int> state;
+      Perm colorPerm;
       bool isHomeState() const 
       { 
          for ( int x : state )
@@ -113,6 +114,58 @@ public:
    virtual vector<Config> matrices() const = 0;
    virtual vector<XYZ> sectorOutline() const = 0;
    virtual vector<XYZ> symmetryPoints() const = 0;
+};
+
+
+uint64_t matrixId( const QMtx4x4& m );
+
+class Rot3Symmetry : public ISymmetry
+{
+public:
+   Rot3Symmetry()
+   {
+      int N = 3;
+      const double PI = acos(0.) * 2.;
+      _Rot = QMtx4x4::rotationY( 2*PI/N );
+      _Perm = Perm( {1,2,0,4,5,3,6} );
+
+      for ( int i = 0; i < N; i++ )
+      {
+         _Configs.push_back( Config { _Rot.pow( i ), {i}, _Perm.pow( i ) } );
+      }
+      
+      for ( int i = 0; i < (int) _Configs.size(); i++ )
+      {
+         _MatrixIdToConfigIndex[matrixId(_Configs[i].m)] = i;
+      }
+   }
+
+   string name() const override { return "rot3"; }
+   Perm colorPermOf( const QMtx4x4& m ) const override
+   {      
+      uint64_t id = matrixId( m );
+      if ( !_MatrixIdToConfigIndex.count( id ) )
+         throw 777;
+      return _Configs[_MatrixIdToConfigIndex.at(id)].colorPerm;
+   }
+   vector<Config> matrices() const override
+   {
+      return _Configs;
+   }
+   vector<XYZ> sectorOutline() const override
+   {
+      return { XYZ(0,1,0), XYZ(0,0,1), XYZ(0,-1,0), XYZ(0,0,1) };
+   }
+   vector<XYZ> symmetryPoints() const override
+   {
+      return { XYZ(0,1,0), XYZ(0,-1,0) };
+   }
+
+public:
+   QMtx4x4 _Rot;
+   Perm _Perm;
+   vector<Config> _Configs;
+   unordered_map<uint64_t, int> _MatrixIdToConfigIndex;
 };
 
 class IcoSymmetry : public ISymmetry
@@ -152,7 +205,7 @@ public:
                    * pow( map( {0,1,2}, {7,6,8} ), sym2 )
                    * pow( map( {0,1,2}, {1,0,5} ), sym1 )
                    * pow( map( {0,1,2}, {1,2,0} ), sym0 );
-         ret.push_back( Config { m, {sym0,sym1,sym2,sym3} } );
+         ret.push_back( Config { m, {sym0,sym1,sym2,sym3}, colorPermOf( m ) } );
       }
       return ret;
    }
@@ -230,7 +283,8 @@ public:
 class GlobalSymmetry
 {
 private:
-   GlobalSymmetry() { _Symmetry.reset( new IcoSymmetry ); }
+   //GlobalSymmetry() { _Symmetry.reset( new IcoSymmetry ); }
+   GlobalSymmetry() { _Symmetry.reset( new Rot3Symmetry ); }
 
 public:
    static GlobalSymmetry& theInstance() { static GlobalSymmetry s_theInstance; return s_theInstance; }

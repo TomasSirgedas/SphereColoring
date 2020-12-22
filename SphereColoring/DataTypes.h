@@ -107,6 +107,8 @@ public:
 
    Matrix4x4 inverted() const;
 
+   Matrix4x4 pow( int p ) const;
+
 public:
    XYZW m[4];
 };
