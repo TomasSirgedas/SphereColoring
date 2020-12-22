@@ -108,6 +108,7 @@ public:
    };
 
 public:
+   virtual string name() const = 0;
    virtual Perm colorPermOf( const QMtx4x4& m ) const = 0;
    virtual vector<Config> matrices() const = 0;
    virtual vector<XYZ> sectorOutline() const = 0;
@@ -132,6 +133,7 @@ public:
              , XYZ(   PHI,    1,    0 )  
              , XYZ(     0,  PHI,    1 ) };
    }
+   string name() const override { return "ico60"; }
    XYZ operator[]( int idx ) const { return _Pts[idx]; }
    QMtx4x4 map( const vector<int>& a, const vector<int>& b ) const
    {

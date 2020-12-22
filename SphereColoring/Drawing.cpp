@@ -394,13 +394,8 @@ QImage Drawing::makeImage( Graph& graph )
             Perm quadPerm = GlobalSymmetry::colorPermOf( m );
 
             int alpha = 255;
-            //int alpha = 128;
-            if ( config.state == vector<int>{0,0,0,0} )
+            if ( config.isHomeState() )
                alpha = 255;
-            //if ( config.state == vector<int>{1,0,0,0} 
-            //  || config.state == vector<int>{2,0,0,0} )
-            //   alpha = 128;
-            //int alpha = config.state == vector<int>{0,0,0,0} ? 255 : 64;
 
             int idx = 0;
             for ( const Graph::TilePtr& tile_ : graph.rawTiles() )
@@ -432,7 +427,7 @@ QImage Drawing::makeImage( Graph& graph )
                idx++;
             }
          }
-         if ( stage == 2 /*&& config.state != vector<int>{0,0,0,0}*/ && !_ShowDual )
+         if ( stage == 2 && !_ShowDual )
          {
             //painter.setPen( QPen( QColor(255,255,255,128), 3 ) );
             painter.setPen( QPen( QColor(0,0,0,96), 3 ) );
@@ -444,7 +439,7 @@ QImage Drawing::makeImage( Graph& graph )
                painter.drawLine( toBitmap( a ), toBitmap( b ) );
             }
          }
-         if ( stage == 3 && config.state == vector<int>{0,0,0,0} && _ShowViolations && !_ShowDual )
+         if ( stage == 3 && config.isHomeState() && _ShowViolations && !_ShowDual )
          {
             painter.setBrush( QColor( 0, 0, 0, 64 ) );
             painter.setPen( Qt::NoPen );
@@ -473,7 +468,7 @@ QImage Drawing::makeImage( Graph& graph )
                }
             }
          }    
-         if ( stage == 4 && config.state == vector<int>{0,0,0,0} && _DrawRigidEDs && !_ShowDual )
+         if ( stage == 4 && config.isHomeState() && _DrawRigidEDs && !_ShowDual )
          {
             painter.setPen( QPen( QColor(0,0,0,128), 1 ) );
             painter.setBrush( Qt::NoBrush );
@@ -486,7 +481,7 @@ QImage Drawing::makeImage( Graph& graph )
                      painter.drawLine( toBitmap( a ), toBitmap( b ) );
                }
          }     
-         if ( stage == 5 && config.state == vector<int>{0,0,0,0} && _LabelVertices && !_ShowDual )
+         if ( stage == 5 && config.isHomeState() && _LabelVertices && !_ShowDual )
          {            
             painter.setPen( QColor( 0, 0, 0, 255 ) );
             for ( const Graph::VertexPtr& a : graph.rawVertices() )
@@ -494,7 +489,7 @@ QImage Drawing::makeImage( Graph& graph )
                painter.drawText( toBitmap( graph.posOf( a ) ), QString::number( a._Index ) );               
             }
          }
-         if ( stage == 6 && config.state == vector<int>{0,0,0,0} && _DrawZoneOfExclusions && !_ShowDual )
+         if ( stage == 6 && config.isHomeState() && _DrawZoneOfExclusions && !_ShowDual )
          {
             painter.setPen( QPen( QColor(255,255,255,192), 0 ) );
             painter.setBrush( Qt::NoBrush );
@@ -533,7 +528,7 @@ QImage Drawing::makeImage( Graph& graph )
             painter.drawPolygon( toQPolygonF( modelRotation() * m * polyCurve, modelToBitmapNoRot() ) );
          }
          // edges
-         if ( stage == 9 && config.state == vector<int>{0,0,0,0} && _ShowDual )
+         if ( stage == 9 && config.isHomeState() && _ShowDual )
          {
             painter.setBrush( Qt::NoBrush );
 
@@ -553,7 +548,7 @@ QImage Drawing::makeImage( Graph& graph )
             }
          }
          // vertices
-         if ( stage == 8 && config.state == vector<int>{0,0,0,0} && _ShowDual )
+         if ( stage == 8 && config.isHomeState() && _ShowDual )
          {
             painter.setBrush( Qt::NoBrush );
 
@@ -579,7 +574,7 @@ QImage Drawing::makeImage( Graph& graph )
             }
          }
          // tile vertices
-         if ( stage == 10 && config.state == vector<int>{0,0,0,0} && _LabelVertices && !_ShowDual )
+         if ( stage == 10 && config.isHomeState() && _LabelVertices && !_ShowDual )
          {
             painter.setBrush( Qt::NoBrush );
             painter.setPen( QColor( 0,0,0 ) );
@@ -591,7 +586,7 @@ QImage Drawing::makeImage( Graph& graph )
             }
          }
          //// draw sector text
-         //if ( stage == 11 && config.state == vector<int>{0,0,0,0} )
+         //if ( stage == 11 && config.isHomeState() )
          //{
          //   painter.setBrush( Qt::NoBrush );
          //   painter.setPen( QColor( 255,255,255 ) );
