@@ -415,14 +415,26 @@ void SphereColoring::toggleSymmetryVertex( int idx )
    if ( idx >= (int) sym.size() )
       return;
 
-   const XYZ& p = sym[idx];
+   XYZ p = sym[idx].normalized() * _Simulation._Radius;
 
-   //int vertexIdx = -1;
-   //for ( const Dual::Vertex& vtx : _Simulation._Dual->_Vertices )
-   //{
-   //   if ( vtx._Pos.dist2( p ) < 1e-12 )
-   //      vertexIdx = vtx._Index;
-   //}
+   int vertexIdx = -1;
+   for ( const Dual::Vertex& vtx : _Simulation._Dual->_Vertices )
+   {
+      if ( vtx._Pos.dist2( p ) < 1e-12 )
+         vertexIdx = vtx._Index;
+   }
+
+   if ( vertexIdx >= 0 )
+   {
+      _Simulation._Dual->deleteVertex( vertexIdx );
+   }
+   else
+   {
+      _Simulation._Dual->addVertex( 0, p );
+      _Simulation._Dual->_Vertices.back()._SymmetryMap = MatrixSymmetryMap::symmetryFor( p );
+   }
+
+   redrawSim();
 }
 
 
