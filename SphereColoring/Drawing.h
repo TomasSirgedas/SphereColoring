@@ -53,7 +53,7 @@ public:
    double _YRotation = 0;
    double _XRotation = 0;
    double _Zoom = 1.;
-   double _Custom[10] = { 0 };
+   double _Custom[10] = { 9 };
    QPoint _ClickPos;
    bool _ShowDual = true;
    bool _DrawCurves = true;

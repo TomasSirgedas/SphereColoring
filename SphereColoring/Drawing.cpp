@@ -495,7 +495,7 @@ QImage Drawing::makeImage( Graph& graph )
          }    
          if ( stage == 4 && config.isHomeState() && _DrawRigidEDs && !_ShowDual )
          {
-            painter.setPen( QPen( QColor(0,0,0,96), 2 ) );
+            painter.setPen( QPen( QColor(0,0,0,96), 2.5 ) );
             painter.setBrush( Qt::NoBrush );
             for ( const ISymmetry::Config& config : GlobalSymmetry::matrices() )
                for ( const auto& pr : _Simulation->_KeepCloseFars ) if ( pr.a.id() < pr.b.id() )
@@ -516,7 +516,6 @@ QImage Drawing::makeImage( Graph& graph )
                      if ( pr.keepClose && pr.keepFar && isOnNearSide( a ) && isOnNearSide( b )  )
                         painter.drawLine( toBitmap( a ), toBitmap( b ) );
                   }
-
                }
          }     
          if ( stage == 5 && config.isHomeState() && _LabelVertices && !_ShowDual )

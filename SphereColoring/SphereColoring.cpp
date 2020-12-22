@@ -154,6 +154,7 @@ SphereColoring::SphereColoring( QWidget *parent )
    shared_ptr<Graph> graph = nullptr;
    _Simulation.init( dual, graph, radius );
    ui.drawing->_Simulation = &_Simulation;
+   ui.lineEdit0->setText( "9" );
    ui.lineEdit1->setText( QString::number( _Simulation._Radius ) );
 
    connect( ui.yRotationSlider, &QSlider::valueChanged, [this]( int ) {
